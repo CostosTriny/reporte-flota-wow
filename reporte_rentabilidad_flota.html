@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Rentabilidad de Flota — Venta de Vehículos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1218;
+    --surface:#161B24;
+    --surface2:#1D2430;
+    --border:#2A3242;
+    --border-soft:#232A38;
+    --text:#EDEFF4;
+    --muted:#8B93A6;
+    --muted2:#5F6779;
+    --accent:#E7B750;
+    --accent-dim:#7A6335;
+    --pos:#49CBA0;
+    --pos-dim:#1C3D34;
+    --neg:#F0687C;
+    --neg-dim:#3D2229;
+    --blue:#6E93E8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .disp{font-family:'Space Grotesk',sans-serif;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+
+  /* HEADER */
+  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--border);padding-bottom:22px;margin-bottom:28px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em;}
+  .subtitle{color:var(--muted);font-size:13.5px;}
+  .plate{display:inline-flex;align-items:center;border:1.5px solid #1a1a1a;border-radius:4px;overflow:hidden;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);}
+  .plate .flag{width:8px;align-self:stretch;background:linear-gradient(180deg,#D91E36 33%,#fff 33%,#fff 66%,#D91E36 66%);}
+  .plate .txt{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:#111;padding:5px 10px;letter-spacing:.03em;}
+  .header-meta{text-align:right;color:var(--muted2);font-size:11.5px;font-family:'JetBrains Mono',monospace;}
+
+  /* KPI STRIP */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+  .kpi{background:var(--surface);padding:18px 18px 16px;}
+  .kpi .label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+  .kpi .value{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.01em;}
+  .kpi .value.pos{color:var(--pos);}
+  .kpi .value.neg{color:var(--neg);}
+  .kpi .sub{font-size:11px;color:var(--muted2);margin-top:6px;font-family:'JetBrains Mono',monospace;}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}}
+
+  /* FILTERS */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:22px;}
+  .panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;font-weight:600;}
+  .filter-row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+  .filter-group{display:flex;flex-direction:column;gap:8px;}
+  .filter-group .fg-label{font-size:10.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;}
+  .pills{display:flex;gap:6px;flex-wrap:wrap;}
+  .pill{cursor:pointer;user-select:none;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12.5px;font-weight:500;transition:all .12s ease;}
+  .pill:hover{border-color:var(--muted2);color:var(--text);}
+  .pill.active{background:var(--accent);border-color:var(--accent);color:#211a08;font-weight:700;}
+  .pill .cnt{opacity:.65;margin-left:5px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+  .searchbox{flex:1;min-width:220px;}
+  .searchbox input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;}
+  .searchbox input:focus{outline:none;border-color:var(--accent);}
+  .searchbox input::placeholder{color:var(--muted2);}
+  .reset-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;align-self:flex-end;}
+  .reset-btn:hover{color:var(--text);border-color:var(--muted2);}
+
+  /* CHARTS */
+  .charts{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:22px;}
+  @media(max-width:900px){.charts{grid-template-columns:1fr;}}
+  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;}
+  .chart-title{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:16px;font-weight:600;}
+  .bar-row{display:grid;grid-template-columns:110px 1fr 78px;gap:10px;align-items:center;margin-bottom:11px;font-size:12.5px;}
+  .bar-row .name{color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-track{position:relative;height:16px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+  .bar-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent-dim),var(--accent));transition:width .3s ease;}
+  .bar-fill.neg{background:linear-gradient(90deg,var(--neg-dim),var(--neg));}
+  .bar-row .val{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
+
+  .donut-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;}
+  .legend{display:flex;flex-direction:column;gap:9px;font-size:12.5px;}
+  .legend .item{display:flex;align-items:center;gap:8px;}
+  .legend .dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+  .legend .item .lname{color:var(--text);min-width:90px;}
+  .legend .item .lval{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11.5px;}
+
+  /* TABLE */
+  .table-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .table-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);}
+  .table-header .th-title{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;}
+  .table-header .count{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted2);}
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.8px;}
+  thead th{position:sticky;top:0;background:var(--surface2);text-align:left;padding:10px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;}
+  thead th:hover{color:var(--text);}
+  thead th.num{text-align:right;}
+  thead th .arrow{opacity:0;font-size:9px;margin-left:3px;}
+  thead th.sorted .arrow{opacity:1;color:var(--accent);}
+  tbody td{padding:9px 14px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
+  tbody td.num{text-align:right;font-family:'JetBrains Mono',monospace;}
+  tbody tr:hover{background:var(--surface2);}
+  .mini-plate{display:inline-flex;align-items:center;border:1px solid #1a1a1a;border-radius:3px;overflow:hidden;background:#fff;}
+  .mini-plate .flag{width:5px;align-self:stretch;background:linear-gradient(180deg,#D91E36 33%,#fff 33%,#fff 66%,#D91E36 66%);}
+  .mini-plate .txt{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11.5px;color:#111;padding:2px 7px;letter-spacing:.02em;}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  .badge.vendido{background:var(--pos-dim);color:var(--pos);}
+  .badge.porvender{background:#2A2B3D;color:var(--blue);}
+  .badge.entriny{background:#3A331C;color:var(--accent);}
+  .badge.siniestro{background:var(--neg-dim);color:var(--neg);}
+  .mbcell{font-weight:700;}
+  .mbcell.pos{color:var(--pos);}
+  .mbcell.neg{color:var(--neg);}
+  .pmb-bar{display:inline-flex;align-items:center;gap:6px;}
+  .pmb-track{width:44px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;position:relative;}
+  .pmb-track .fill{position:absolute;top:0;height:100%;border-radius:3px;}
+
+  .empty-state{padding:50px 20px;text-align:center;color:var(--muted2);font-size:13px;}
+
+  footer{margin-top:26px;color:var(--muted2);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Reporte gerencial · WOW</div>
+      <h1>Rentabilidad de Flota — Venta de Vehículos</h1>
+      <div class="subtitle">103 unidades &nbsp;·&nbsp; Márgenes por placa, marca, modelo y estado de venta</div>
+    </div>
+    <div class="plate"><div class="flag"></div><div class="txt">RESUMEN</div></div>
+  </header>
+
+  <div class="kpis" id="kpiStrip"></div>
+
+  <div class="panel">
+    <div class="panel-title">Filtros</div>
+    <div class="filter-row">
+      <div class="filter-group">
+        <div class="fg-label">Marca</div>
+        <div class="pills" id="pillsMarca"></div>
+      </div>
+      <div class="filter-group">
+        <div class="fg-label">Estado</div>
+        <div class="pills" id="pillsEstado"></div>
+      </div>
+      <div class="filter-group">
+        <div class="fg-label">Año modelo</div>
+        <div class="pills" id="pillsAnio"></div>
+      </div>
+      <div class="filter-group searchbox">
+        <div class="fg-label">Buscar placa / modelo</div>
+        <input type="text" id="searchInput" placeholder="Ej. BVH, N400, YARIS...">
+      </div>
+      <button class="reset-btn" id="resetBtn">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-title">Margen bruto (S/) y % margen por marca</div>
+      <div id="chartMarca"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Unidades por estado</div>
+      <div class="donut-wrap">
+        <svg id="donutEstado" width="150" height="150" viewBox="0 0 150 150"></svg>
+        <div class="legend" id="legendEstado"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <div class="th-title">Detalle por vehículo</div>
+      <div class="count" id="rowCount"></div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-key="placa">Placa<span class="arrow">▾</span></th>
+            <th data-key="marca">Marca<span class="arrow">▾</span></th>
+            <th data-key="modelo">Modelo<span class="arrow">▾</span></th>
+            <th data-key="anio">Año<span class="arrow">▾</span></th>
+            <th data-key="estado">Estado<span class="arrow">▾</span></th>
+            <th class="num" data-key="ingreso">Ingreso<span class="arrow">▾</span></th>
+            <th class="num" data-key="costo">Costo<span class="arrow">▾</span></th>
+            <th class="num" data-key="mb">Margen Bruto<span class="arrow">▾</span></th>
+            <th class="num" data-key="pmb">% Margen<span class="arrow">▾</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">Ningún vehículo coincide con los filtros seleccionados.</div>
+    </div>
+  </div>
+
+  <footer>Fuente: Hoja3 · WOW_Revisado_Rentabilidad.xlsx &nbsp;—&nbsp; Ingreso = Ingreso operativo + venta de vehículo &nbsp;·&nbsp; Margen Bruto = Ingreso − Costo Total</footer>
+</div>
+
+<script>
+const DATA = [{"placa": "BNV-813", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7118.64, "precioCompra": 10169.49, "ingresoTotal": 19155.12, "ingreso": 26273.76, "costo": -23114.35, "mb": 3159.41, "pmb": 12.02}, {"placa": "BNV-814", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7118.64, "precioCompra": 10169.49, "ingresoTotal": 20396.06, "ingreso": 27514.7, "costo": -24120.62, "mb": 3394.08, "pmb": 12.34}, {"placa": "BNV-862", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6949.15, "precioCompra": 10169.49, "ingresoTotal": 22381.24, "ingreso": 29330.39, "costo": -24587.69, "mb": 4742.7, "pmb": 16.17}, {"placa": "BNV-899", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 10169.49, "ingresoTotal": 20105.01, "ingreso": 26884.67, "costo": -25356.63, "mb": 1528.05, "pmb": 5.68}, {"placa": "BNV-900", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7245.76, "precioCompra": 10169.49, "ingresoTotal": 19399.08, "ingreso": 26644.84, "costo": -22212.44, "mb": 4432.4, "pmb": 16.64}, {"placa": "BNW-887", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7118.64, "precioCompra": 10169.49, "ingresoTotal": 21173.49, "ingreso": 28292.13, "costo": -24267.72, "mb": 4024.41, "pmb": 14.22}, {"placa": "BNW-889", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6949.15, "precioCompra": 10169.49, "ingresoTotal": 19850.48, "ingreso": 26799.63, "costo": -24910.69, "mb": 1888.94, "pmb": 7.05}, {"placa": "BNW-894", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 10169.49, "ingresoTotal": 19757.98, "ingreso": 26537.64, "costo": -23117.96, "mb": 3419.68, "pmb": 12.89}, {"placa": "BNW-895", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7118.64, "precioCompra": 10169.49, "ingresoTotal": 19199.21, "ingreso": 26317.85, "costo": -23172.92, "mb": 3144.93, "pmb": 11.95}, {"placa": "BNW-897", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6610.17, "precioCompra": 10169.49, "ingresoTotal": 19650.28, "ingreso": 26260.45, "costo": -22702.27, "mb": 3558.18, "pmb": 13.55}, {"placa": "BNW-920", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7288.14, "precioCompra": 10169.49, "ingresoTotal": 18831.81, "ingreso": 26119.95, "costo": -24107.14, "mb": 2012.81, "pmb": 7.71}, {"placa": "BNX-720", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7288.14, "precioCompra": 10169.49, "ingresoTotal": 19203.87, "ingreso": 26492.01, "costo": -21604.4, "mb": 4887.61, "pmb": 18.45}, {"placa": "BPB-831", "marca": "MITSUBISHI", "modelo": "L 200", "version": "4X4 2.4 TD HP", "anio": 2022, "estado": "VENDIDO", "precioVenta": 16313.56, "precioCompra": 26007.63, "ingresoTotal": 28678.15, "ingreso": 44991.71, "costo": -51876.47, "mb": -6884.76, "pmb": -15.3}, {"placa": "BPX-877", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7118.64, "precioCompra": 10406.78, "ingresoTotal": 18519.13, "ingreso": 25637.77, "costo": -21522.16, "mb": 4115.61, "pmb": 16.05}, {"placa": "BPY-925", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7118.64, "precioCompra": 10406.78, "ingresoTotal": 19002.46, "ingreso": 26121.1, "costo": -20637.69, "mb": 5483.41, "pmb": 20.99}, {"placa": "BRI-825", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 10406.78, "ingresoTotal": 19626.88, "ingreso": 26406.54, "costo": -23852.45, "mb": 2554.09, "pmb": 9.67}, {"placa": "BRI-831", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 10406.78, "ingresoTotal": 18795.03, "ingreso": 25574.69, "costo": -23513.95, "mb": 2060.74, "pmb": 8.06}, {"placa": "BRL-801", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 10406.78, "ingresoTotal": 18288.7, "ingreso": 25068.36, "costo": -22309.57, "mb": 2758.79, "pmb": 11.01}, {"placa": "BSL-840", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7457.63, "precioCompra": 11203.39, "ingresoTotal": 18047.56, "ingreso": 25505.19, "costo": -22341.6, "mb": 3163.59, "pmb": 12.4}, {"placa": "BSL-920", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7203.39, "precioCompra": 11203.39, "ingresoTotal": 19416.47, "ingreso": 26619.86, "costo": -24453.72, "mb": 2166.14, "pmb": 8.14}, {"placa": "BSM-765", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11203.39, "ingresoTotal": 19112, "ingreso": 26842.34, "costo": -22727.82, "mb": 4114.51, "pmb": 15.33}, {"placa": "BSM-776", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7457.63, "precioCompra": 11203.39, "ingresoTotal": 16860.16, "ingreso": 24317.79, "costo": -21717.0, "mb": 2600.79, "pmb": 10.7}, {"placa": "BTN-753", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7627.12, "precioCompra": 11618.64, "ingresoTotal": 15749.61, "ingreso": 23376.73, "costo": -22246.44, "mb": 1130.29, "pmb": 4.84}, {"placa": "BTO-766", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 11618.64, "ingresoTotal": 15930.69, "ingreso": 22710.35, "costo": -22422.6, "mb": 287.75, "pmb": 1.27}, {"placa": "BVH-791", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7033.9, "precioCompra": 11381.36, "ingresoTotal": 16544.89, "ingreso": 23578.79, "costo": -20340.95, "mb": 3237.84, "pmb": 13.73}, {"placa": "BVH-793", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 18158.38, "ingreso": 25897.7, "costo": -23371.87, "mb": 2525.84, "pmb": 9.75}, {"placa": "BVH-795", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 17794.85, "ingreso": 25534.17, "costo": -20948.68, "mb": 4585.5, "pmb": 17.96}, {"placa": "BVH-844", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7076.27, "precioCompra": 11381.36, "ingresoTotal": 16136.05, "ingreso": 23212.32, "costo": -20355.86, "mb": 2856.46, "pmb": 12.31}, {"placa": "BVH-846", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6610.17, "precioCompra": 11381.36, "ingresoTotal": 16997.69, "ingreso": 23607.86, "costo": -21636.12, "mb": 1971.74, "pmb": 8.35}, {"placa": "BVH-847", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 17263.45, "ingreso": 25002.77, "costo": -20628.68, "mb": 4374.09, "pmb": 17.49}, {"placa": "BVH-848", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7203.39, "precioCompra": 11381.36, "ingresoTotal": 16770.87, "ingreso": 23974.26, "costo": -21203.17, "mb": 2771.09, "pmb": 11.56}, {"placa": "BVH-854", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6949.15, "precioCompra": 11381.36, "ingresoTotal": 15963.49, "ingreso": 22912.64, "costo": -21054.99, "mb": 1857.65, "pmb": 8.11}, {"placa": "BVH-855", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 16318.48, "ingreso": 24057.8, "costo": -20186.51, "mb": 3871.29, "pmb": 16.09}, {"placa": "BVH-864", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6610.17, "precioCompra": 11381.36, "ingresoTotal": 16512.72, "ingreso": 23122.89, "costo": -21133.04, "mb": 1989.85, "pmb": 8.61}, {"placa": "BVH-866", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6610.17, "precioCompra": 11381.36, "ingresoTotal": 13977.34, "ingreso": 20587.51, "costo": -20272.51, "mb": 315.0, "pmb": 1.53}, {"placa": "BVH-869", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7033.9, "precioCompra": 11381.36, "ingresoTotal": 16324.03, "ingreso": 23357.93, "costo": -22335.22, "mb": 1022.71, "pmb": 4.38}, {"placa": "BVH-871", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7203.39, "precioCompra": 11381.36, "ingresoTotal": 17401.1, "ingreso": 24604.49, "costo": -21123.74, "mb": 3480.75, "pmb": 14.15}, {"placa": "BVH-879", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 16984.89, "ingreso": 24724.21, "costo": -20647.05, "mb": 4077.17, "pmb": 16.49}, {"placa": "BVH-887", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 15963.49, "ingreso": 23702.81, "costo": -20753.62, "mb": 2949.2, "pmb": 12.44}, {"placa": "BVH-888", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7627.12, "precioCompra": 11381.36, "ingresoTotal": 16991.33, "ingreso": 24618.45, "costo": -20471.7, "mb": 4146.75, "pmb": 16.84}, {"placa": "BVH-895", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7203.39, "precioCompra": 11381.36, "ingresoTotal": 16740.03, "ingreso": 23943.42, "costo": -22349.68, "mb": 1593.74, "pmb": 6.66}, {"placa": "BVH-896", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7372.88, "precioCompra": 11381.36, "ingresoTotal": 16688.34, "ingreso": 24061.22, "costo": -20156.64, "mb": 3904.58, "pmb": 16.23}, {"placa": "BVH-898", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7372.88, "precioCompra": 11381.36, "ingresoTotal": 17311.1, "ingreso": 24683.98, "costo": -20798.39, "mb": 3885.59, "pmb": 15.74}, {"placa": "BVH-905", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7372.88, "precioCompra": 11381.36, "ingresoTotal": 18237.31, "ingreso": 25610.19, "costo": -22177.78, "mb": 3432.41, "pmb": 13.4}, {"placa": "BVH-906", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 7203.39, "precioCompra": 11381.36, "ingresoTotal": 19376.81, "ingreso": 26580.2, "costo": -22063.11, "mb": 4517.09, "pmb": 16.99}, {"placa": "BVH-907", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 15963.49, "ingreso": 23702.81, "costo": -20226.56, "mb": 3476.25, "pmb": 14.67}, {"placa": "BVH-935", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6610.17, "precioCompra": 11381.36, "ingresoTotal": 17696.75, "ingreso": 24306.92, "costo": -21815.34, "mb": 2491.58, "pmb": 10.25}, {"placa": "BVH-938", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 16025.28, "ingreso": 23764.6, "costo": -20124.02, "mb": 3640.59, "pmb": 15.32}, {"placa": "BVI-704", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6694.92, "precioCompra": 11381.36, "ingresoTotal": 15963.49, "ingreso": 22658.41, "costo": -20107.15, "mb": 2551.26, "pmb": 11.26}, {"placa": "BVI-706", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 15963.49, "ingreso": 23702.81, "costo": -20370.49, "mb": 3332.32, "pmb": 14.06}, {"placa": "BVI-707", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6779.66, "precioCompra": 11381.36, "ingresoTotal": 16337.52, "ingreso": 23117.18, "costo": -20732.1, "mb": 2385.08, "pmb": 10.32}, {"placa": "BVI-712", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6694.92, "precioCompra": 11381.36, "ingresoTotal": 15978.21, "ingreso": 22673.13, "costo": -19877.53, "mb": 2795.6, "pmb": 12.33}, {"placa": "BVI-713", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "VENDIDO", "precioVenta": 6949.15, "precioCompra": 11381.36, "ingresoTotal": 16543.65, "ingreso": 23492.8, "costo": -22263.42, "mb": 1229.38, "pmb": 5.23}, {"placa": "BZF-685", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 9745.76, "precioCompra": 14652.54, "ingresoTotal": 24264.87, "ingreso": 34010.63, "costo": -31972.42, "mb": 2038.21, "pmb": 5.99}, {"placa": "BZG-433", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 9745.76, "precioCompra": 14652.54, "ingresoTotal": 21590.25, "ingreso": 31336.01, "costo": -30271.76, "mb": 1064.25, "pmb": 3.4}, {"placa": "BZG-599", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 9745.76, "precioCompra": 14652.54, "ingresoTotal": 20061.89, "ingreso": 29807.65, "costo": -29313.94, "mb": 493.71, "pmb": 1.66}, {"placa": "BZR-526", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 10169.49, "precioCompra": 14652.54, "ingresoTotal": 23470.86, "ingreso": 33640.35, "costo": -31126.62, "mb": 2513.73, "pmb": 7.47}, {"placa": "BZS-426", "marca": "CHEVROLET", "modelo": "N400", "version": "MOVE 1.5 MT PASAJEROS FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 8305.08, "precioCompra": 11008.47, "ingresoTotal": 20214.97, "ingreso": 28520.05, "costo": -24112.75, "mb": 4407.3, "pmb": 15.45}, {"placa": "BZT-099", "marca": "CHEVROLET", "modelo": "N400", "version": "MOVE 1.5 MT PASAJEROS FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 8050.85, "precioCompra": 11008.47, "ingresoTotal": 21172.73, "ingreso": 29223.58, "costo": -24173.54, "mb": 5050.04, "pmb": 17.28}, {"placa": "BZT-245", "marca": "CHEVROLET", "modelo": "N400", "version": "MOVE 1.5 MT PASAJEROS FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7627.12, "precioCompra": 11008.47, "ingresoTotal": 22586.89, "ingreso": 30214.01, "costo": -26051.67, "mb": 4162.34, "pmb": 13.78}, {"placa": "CAF-431", "marca": "CHEVROLET", "modelo": "TRAVERSE", "version": "3.6 PR AT AWD PLUS", "anio": 2022, "estado": "VENDIDO", "precioVenta": 25847.46, "precioCompra": 44059.32, "ingresoTotal": 54458.83, "ingreso": 80306.29, "costo": -77283.58, "mb": 3022.71, "pmb": 3.76}, {"placa": "CAO-291", "marca": "CHEVROLET", "modelo": "TAHOE", "version": "5.3 V8 Z71 AT 4WD", "anio": 2022, "estado": "VENDIDO", "precioVenta": 33050.85, "precioCompra": 63550.85, "ingresoTotal": 87776.59, "ingreso": 120827.44, "costo": -115098.93, "mb": 5728.51, "pmb": 4.74}, {"placa": "CAT-248", "marca": "CHEVROLET", "modelo": "TAHOE", "version": "5.3 V8 Z71 AT 4WD", "anio": 2022, "estado": "VENDIDO", "precioVenta": 36440.68, "precioCompra": 63550.84, "ingresoTotal": 83040.06, "ingreso": 119480.74, "costo": -111946.14, "mb": 7534.6, "pmb": 6.31}, {"placa": "CAU-320", "marca": "CHEVROLET", "modelo": "N400", "version": "MOVE 1.5 MT PASAJEROS FULL", "anio": 2022, "estado": "VENDIDO", "precioVenta": 7542.37, "precioCompra": 11228.81, "ingresoTotal": 19461.72, "ingreso": 27004.09, "costo": -21851.18, "mb": 5152.91, "pmb": 19.08}, {"placa": "CBA-318", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 11016.95, "precioCompra": 14398.31, "ingresoTotal": 19704.7, "ingreso": 30721.65, "costo": -27943.89, "mb": 2777.76, "pmb": 9.04}, {"placa": "CBA-640", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 10847.46, "precioCompra": 14398.31, "ingresoTotal": 18587.96, "ingreso": 29435.42, "costo": -28846.17, "mb": 589.25, "pmb": 2.0}, {"placa": "CBT-671", "marca": "TOYOTA", "modelo": "YARIS", "version": "GLI 1.3 MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 9322.03, "precioCompra": 14398.31, "ingresoTotal": 14413.58, "ingreso": 23735.61, "costo": -25720.18, "mb": -1984.57, "pmb": -8.36}, {"placa": "CBU-499", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 9322.03, "precioCompra": 14398.31, "ingresoTotal": 17941.71, "ingreso": 27263.74, "costo": -27904.08, "mb": -640.34, "pmb": -2.35}, {"placa": "CBW-576", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "VENDIDO", "precioVenta": 8898.31, "precioCompra": 14398.31, "ingresoTotal": 20274.76, "ingreso": 29173.07, "costo": -26186.15, "mb": 2986.92, "pmb": 10.24}, {"placa": "CDY-622", "marca": "CHEVROLET", "modelo": "TRAVERSE", "version": "3.6 PR AT AWD PLUS", "anio": 2023, "estado": "Por vender", "precioVenta": 0, "precioCompra": 46601.69, "ingresoTotal": 50167.58, "ingreso": 79526.64, "costo": -79881.1, "mb": -354.46, "pmb": -0.45}, {"placa": "CEQ-587", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11440.68, "precioCompra": 15508.48, "ingresoTotal": 19184.77, "ingreso": 30625.45, "costo": -26983.34, "mb": 3642.11, "pmb": 11.89}, {"placa": "CEQ-627", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11016.95, "precioCompra": 15508.48, "ingresoTotal": 19893.89, "ingreso": 30910.84, "costo": -27020.08, "mb": 3890.76, "pmb": 12.59}, {"placa": "CER-294", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11440.68, "precioCompra": 15508.48, "ingresoTotal": 19184.77, "ingreso": 30625.45, "costo": -26574.57, "mb": 4050.88, "pmb": 13.23}, {"placa": "CET-133", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11186.44, "precioCompra": 15508.48, "ingresoTotal": 19608.76, "ingreso": 30795.2, "costo": -27728.99, "mb": 3066.21, "pmb": 9.96}, {"placa": "CEW-019", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11440.68, "precioCompra": 15508.47, "ingresoTotal": 19011.35, "ingreso": 30452.03, "costo": -26851.34, "mb": 3600.69, "pmb": 11.82}, {"placa": "CEW-058", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11440.68, "precioCompra": 15508.47, "ingresoTotal": 19899.19, "ingreso": 31339.87, "costo": -26687.67, "mb": 4652.2, "pmb": 14.84}, {"placa": "CFK-673", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11440.68, "precioCompra": 15508.47, "ingresoTotal": 20451.41, "ingreso": 31892.09, "costo": -26789.7, "mb": 5102.39, "pmb": 16.0}, {"placa": "CFL-135", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 11440.68, "precioCompra": 15508.47, "ingresoTotal": 17906.14, "ingreso": 29346.82, "costo": -25824.6, "mb": 3522.22, "pmb": 12.0}, {"placa": "CFR-200", "marca": "TOYOTA", "modelo": "HIACE", "version": "COMMUTER 1GD-LG MT", "anio": 2024, "estado": "VENDIDO", "precioVenta": 22033.9, "precioCompra": 30822.03, "ingresoTotal": 30162.42, "ingreso": 52196.32, "costo": -52068.06, "mb": 128.26, "pmb": 0.25}, {"placa": "BPA-703", "marca": "MITSUBISHI", "modelo": "L 200", "version": "4X4 2.4 TD HP", "anio": 2022, "estado": "En Triny", "precioVenta": 0, "precioCompra": 26007.63, "ingresoTotal": 34850.12, "ingreso": 50454.7, "costo": -55549.3, "mb": -5094.6, "pmb": -10.1}, {"placa": "BPY-706", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL PANEL", "anio": 2022, "estado": "SINIESTRO", "precioVenta": 0, "precioCompra": 10406.78, "ingresoTotal": 12766.26, "ingreso": 19946.94, "costo": -22129.64, "mb": -2182.7, "pmb": -10.94}, {"placa": "BRG-864", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 10406.78, "ingresoTotal": 21552.99, "ingreso": 28525.53, "costo": -25501.65, "mb": 3023.88, "pmb": 10.6}, {"placa": "BRZ-858", "marca": "MITSUBISHI", "modelo": "L 200", "version": "4x4 2.4 TD HP GLX MT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 28220.34, "ingresoTotal": 32865.27, "ingreso": 49515.27, "costo": -58136.77, "mb": -8621.5, "pmb": -17.41}, {"placa": "BTL-728", "marca": "MITSUBISHI", "modelo": "L 200", "version": "4x4 2.4 TD HP GLX MT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 28220.34, "ingresoTotal": 27843.06, "ingreso": 44775.26, "costo": -53059.89, "mb": -8284.62, "pmb": -18.5}, {"placa": "BVH-939", "marca": "CHEVROLET", "modelo": "N400", "version": "MAX 1.5 MT CARGO FULL", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 11381.36, "ingresoTotal": 19235.29, "ingreso": 26974.61, "costo": -22268.15, "mb": 4706.47, "pmb": 17.45}, {"placa": "BZE-634", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "En Triny", "precioVenta": 5436.67, "precioCompra": 14652.54, "ingresoTotal": 19034.1, "ingreso": 24470.77, "costo": -28249.43, "mb": -3778.66, "pmb": -15.44}, {"placa": "BZG-665", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "En Triny", "precioVenta": 5436.67, "precioCompra": 14652.54, "ingresoTotal": 23565.99, "ingreso": 29002.66, "costo": -31267.73, "mb": -2265.08, "pmb": -7.81}, {"placa": "BZH-299", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "En Triny", "precioVenta": 5436.67, "precioCompra": 14652.54, "ingresoTotal": 19948.26, "ingreso": 25384.93, "costo": -30116.25, "mb": -4731.32, "pmb": -18.64}, {"placa": "BZH-346", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "En Triny", "precioVenta": 5436.67, "precioCompra": 14652.54, "ingresoTotal": 23616.4, "ingreso": 29053.07, "costo": -28311.21, "mb": 741.86, "pmb": 2.55}, {"placa": "BZH-475", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 14652.54, "ingresoTotal": 23249.2, "ingreso": 32333.78, "costo": -32737.53, "mb": -403.75, "pmb": -1.25}, {"placa": "BZQ-355", "marca": "TOYOTA", "modelo": "YARIS", "version": "1.3 GLI MT", "anio": 2023, "estado": "En Triny", "precioVenta": 5436.67, "precioCompra": 14652.54, "ingresoTotal": 17076.96, "ingreso": 22513.63, "costo": -28063.43, "mb": -5549.8, "pmb": -24.65}, {"placa": "BZT-007", "marca": "CHEVROLET", "modelo": "CAPTIVA", "version": "1.5T PR AT 3F", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 22449.15, "ingresoTotal": 32542.26, "ingreso": 46460.73, "costo": -45485.68, "mb": 975.05, "pmb": 2.1}, {"placa": "CAD-498", "marca": "TOYOTA", "modelo": "YARIS", "version": "GLI 1.3 CVT", "anio": 2023, "estado": "En Triny", "precioVenta": 5908.67, "precioCompra": 15923.73, "ingresoTotal": 29103.73, "ingreso": 35012.4, "costo": -28934.7, "mb": 6077.7, "pmb": 17.36}, {"placa": "CAE-106", "marca": "CHEVROLET", "modelo": "CAPTIVA", "version": "1.5T PR AT 3F", "anio": 2022, "estado": "En Triny", "precioVenta": 0, "precioCompra": 22449.15, "ingresoTotal": 31701.1, "ingreso": 45619.57, "costo": -42425.52, "mb": 3194.05, "pmb": 7.0}, {"placa": "CAY-624", "marca": "TOYOTA", "modelo": "LC PRADO", "version": "4.0 TX-L AT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 56271.19, "ingresoTotal": 77090.66, "ingreso": 112541.51, "costo": -99896.82, "mb": 12644.7, "pmb": 11.24}, {"placa": "CBS-145", "marca": "TOYOTA", "modelo": "LC PRADO", "version": "4.0 TX-L AT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 56262.71, "ingresoTotal": 69029.96, "ingreso": 104475.47, "costo": -97063.33, "mb": 7412.14, "pmb": 7.09}, {"placa": "CDH-211", "marca": "TOYOTA", "modelo": "YARIS", "version": "GLI 1.3 MT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 15618.64, "ingresoTotal": 20201.74, "ingreso": 29885.3, "costo": -28688.78, "mb": 1196.52, "pmb": 4.0}, {"placa": "CDH-310", "marca": "TOYOTA", "modelo": "YARIS", "version": "GLI 1.3 MT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 15618.64, "ingresoTotal": 18924.65, "ingreso": 28764.39, "costo": -29833.51, "mb": -1069.12, "pmb": -3.72}, {"placa": "CDH-332", "marca": "TOYOTA", "modelo": "COROLLA CROSS", "version": "2.0 FULL CVT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 20203.39, "ingresoTotal": 23739.03, "ingreso": 36669.2, "costo": -35453.81, "mb": 1215.39, "pmb": 3.31}, {"placa": "CDH-483", "marca": "TOYOTA", "modelo": "YARIS", "version": "GLI 1.3 MT", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 15618.64, "ingresoTotal": 18765.64, "ingreso": 28605.38, "costo": -28386.13, "mb": 219.25, "pmb": 0.77}, {"placa": "CDO-351", "marca": "HYUNDAI", "modelo": "NEW TUCSON", "version": "TUCSON - GL", "anio": 2023, "estado": "En Triny", "precioVenta": 0, "precioCompra": 24906.78, "ingresoTotal": 26669.14, "ingreso": 42858.55, "costo": -42514.63, "mb": 343.92, "pmb": 0.8}, {"placa": "CEV-692", "marca": "TOYOTA", "modelo": "COROLLA CROSS", "version": "2.0 FULL D-LUX CVT", "anio": 2024, "estado": "En Triny", "precioVenta": 0, "precioCompra": 21203.39, "ingresoTotal": 22596.33, "ingreso": 37226.67, "costo": -35729.75, "mb": 1496.92, "pmb": 4.02}, {"placa": "CFQ-397", "marca": "TOYOTA", "modelo": "HIACE", "version": "COMMUTER 1GD-LG MT", "anio": 2024, "estado": "En Triny", "precioVenta": 0, "precioCompra": 30822.03, "ingresoTotal": 30161.42, "ingreso": 49887.52, "costo": -52796.8, "mb": -2909.28, "pmb": -5.83}];
+
+const ESTADO_ORDER = ["VENDIDO","Por vender","En Triny","SINIESTRO"];
+const ESTADO_COLOR = {"VENDIDO":"#49CBA0","Por vender":"#6E93E8","En Triny":"#E7B750","SINIESTRO":"#F0687C"};
+const ESTADO_CLASS = {"VENDIDO":"vendido","Por vender":"porvender","En Triny":"entriny","SINIESTRO":"siniestro"};
+
+let state = { marca: null, estado: null, anio: null, search: "", sortKey: "mb", sortDir: -1 };
+
+function fmtMoney(n){
+  const sign = n < 0 ? "-" : "";
+  return sign + "S/ " + Math.abs(n).toLocaleString("es-PE", {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+function fmtPct(n){ return (n>=0?"+":"") + n.toFixed(1) + "%"; }
+
+function uniqueSorted(arr){ return [...new Set(arr)].sort(); }
+
+function getFiltered(){
+  return DATA.filter(d=>{
+    if(state.marca && d.marca !== state.marca) return false;
+    if(state.estado && d.estado !== state.estado) return false;
+    if(state.anio && d.anio !== state.anio) return false;
+    if(state.search){
+      const s = state.search.toLowerCase();
+      if(!d.placa.toLowerCase().includes(s) && !d.modelo.toLowerCase().includes(s) && !d.marca.toLowerCase().includes(s) && !d.version.toLowerCase().includes(s)) return false;
+    }
+    return true;
+  });
+}
+
+function renderKPIs(rows){
+  const ingreso = rows.reduce((a,d)=>a+d.ingreso,0);
+  const costo = rows.reduce((a,d)=>a+d.costo,0);
+  const mb = rows.reduce((a,d)=>a+d.mb,0);
+  const pmb = ingreso!==0 ? (mb/ingreso*100) : 0;
+  const vendidos = rows.filter(d=>d.estado==="VENDIDO").length;
+
+  const kpis = [
+    {label:"Ingreso total", value: fmtMoney(ingreso), sub: rows.length+" unidades", cls:""},
+    {label:"Costo total", value: fmtMoney(costo), sub:"Compra + operación", cls:""},
+    {label:"Margen bruto", value: fmtMoney(mb), sub: mb>=0?"Resultado positivo":"Resultado negativo", cls: mb>=0?"pos":"neg"},
+    {label:"% Margen global", value: fmtPct(pmb), sub:"Sobre ingreso total", cls: pmb>=0?"pos":"neg"},
+    {label:"Unidades vendidas", value: vendidos + " / " + rows.length, sub: rows.length? Math.round(vendidos/rows.length*100)+"% del filtro":"—", cls:""},
+  ];
+  document.getElementById("kpiStrip").innerHTML = kpis.map(k=>`
+    <div class="kpi">
+      <div class="label">${k.label}</div>
+      <div class="value ${k.cls}">${k.value}</div>
+      <div class="sub">${k.sub}</div>
+    </div>`).join("");
+}
+
+function renderPills(){
+  const marcaCounts = {};
+  const estadoCounts = {};
+  const anioCounts = {};
+  DATA.forEach(d=>{
+    marcaCounts[d.marca] = (marcaCounts[d.marca]||0)+1;
+    estadoCounts[d.estado] = (estadoCounts[d.estado]||0)+1;
+    anioCounts[d.anio] = (anioCounts[d.anio]||0)+1;
+  });
+
+  const marcas = uniqueSorted(DATA.map(d=>d.marca)).sort((a,b)=>marcaCounts[b]-marcaCounts[a]);
+  document.getElementById("pillsMarca").innerHTML = marcas.map(m=>
+    `<div class="pill ${state.marca===m?'active':''}" data-type="marca" data-val="${m}">${m}<span class="cnt">${marcaCounts[m]}</span></div>`
+  ).join("");
+
+  const estados = ESTADO_ORDER.filter(e=>estadoCounts[e]);
+  document.getElementById("pillsEstado").innerHTML = estados.map(e=>
+    `<div class="pill ${state.estado===e?'active':''}" data-type="estado" data-val="${e}">${e}<span class="cnt">${estadoCounts[e]}</span></div>`
+  ).join("");
+
+  const anios = uniqueSorted(DATA.map(d=>d.anio));
+  document.getElementById("pillsAnio").innerHTML = anios.map(a=>
+    `<div class="pill ${state.anio===a?'active':''}" data-type="anio" data-val="${a}">${a}<span class="cnt">${anioCounts[a]}</span></div>`
+  ).join("");
+
+  document.querySelectorAll(".pill").forEach(p=>{
+    p.addEventListener("click", ()=>{
+      const type = p.dataset.type;
+      let val = p.dataset.val;
+      if(type==="anio") val = parseInt(val);
+      if(state[type] === val) state[type] = null; else state[type] = val;
+      renderAll();
+    });
+  });
+}
+
+function renderChartMarca(rows){
+  const byMarca = {};
+  rows.forEach(d=>{
+    if(!byMarca[d.marca]) byMarca[d.marca] = {ingreso:0, mb:0, count:0};
+    byMarca[d.marca].ingreso += d.ingreso;
+    byMarca[d.marca].mb += d.mb;
+    byMarca[d.marca].count += 1;
+  });
+  const entries = Object.entries(byMarca).sort((a,b)=>b[1].mb-a[1].mb);
+  if(entries.length===0){ document.getElementById("chartMarca").innerHTML = '<div class="empty-state">Sin datos</div>'; return; }
+  const maxAbs = Math.max(...entries.map(e=>Math.abs(e[1].mb)), 1);
+
+  document.getElementById("chartMarca").innerHTML = entries.map(([marca,v])=>{
+    const pct = (v.mb/v.ingreso*100);
+    const width = Math.max(Math.abs(v.mb)/maxAbs*100, 2);
+    const negCls = v.mb<0 ? "neg" : "";
+    return `<div class="bar-row">
+      <div class="name">${marca}</div>
+      <div class="bar-track"><div class="bar-fill ${negCls}" style="width:${width}%"></div></div>
+      <div class="val">${fmtPct(pct)}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderDonut(rows){
+  const counts = {};
+  ESTADO_ORDER.forEach(e=>counts[e]=0);
+  rows.forEach(d=>{ counts[d.estado] = (counts[d.estado]||0)+1; });
+  const total = rows.length || 1;
+  let cumulative = 0;
+  const r = 60, cx=75, cy=75, sw=20;
+  let paths = "";
+  ESTADO_ORDER.forEach(e=>{
+    const val = counts[e];
+    if(!val) return;
+    const frac = val/total;
+    const start = cumulative * 2*Math.PI - Math.PI/2;
+    cumulative += frac;
+    const end = cumulative * 2*Math.PI - Math.PI/2;
+    const x1 = cx + r*Math.cos(start), y1 = cy + r*Math.sin(start);
+    const x2 = cx + r*Math.cos(end), y2 = cy + r*Math.sin(end);
+    const largeArc = frac > 0.5 ? 1 : 0;
+    paths += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" stroke="${ESTADO_COLOR[e]}" stroke-width="${sw}" fill="none"/>`;
+  });
+  document.getElementById("donutEstado").innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="${r-sw/2-3}" fill="var(--bg)"/><text x="${cx}" y="${cy-3}" text-anchor="middle" fill="#EDEFF4" font-family="Space Grotesk" font-weight="700" font-size="22">${rows.length}</text><text x="${cx}" y="${cy+15}" text-anchor="middle" fill="#8B93A6" font-family="Inter" font-size="9">unidades</text>`;
+
+  document.getElementById("legendEstado").innerHTML = ESTADO_ORDER.filter(e=>counts[e]).map(e=>{
+    const pct = Math.round(counts[e]/total*100);
+    return `<div class="item"><div class="dot" style="background:${ESTADO_COLOR[e]}"></div><div class="lname">${e}</div><div class="lval">${counts[e]} · ${pct}%</div></div>`;
+  }).join("");
+}
+
+function renderTable(rows){
+  const sorted = [...rows].sort((a,b)=>{
+    const k = state.sortKey;
+    let av = a[k], bv = b[k];
+    if(typeof av === "string"){ av = av.toLowerCase(); bv = bv.toLowerCase(); }
+    if(av < bv) return -1*state.sortDir;
+    if(av > bv) return 1*state.sortDir;
+    return 0;
+  });
+
+  document.querySelectorAll("thead th").forEach(th=>{
+    th.classList.toggle("sorted", th.dataset.key === state.sortKey);
+    const arrow = th.querySelector(".arrow");
+    if(th.dataset.key === state.sortKey) arrow.textContent = state.sortDir===1 ? "▴" : "▾";
+  });
+
+  document.getElementById("rowCount").textContent = rows.length + " de " + DATA.length + " unidades";
+
+  const tbody = document.getElementById("tbody");
+  const emptyState = document.getElementById("emptyState");
+  if(sorted.length===0){
+    tbody.innerHTML = "";
+    emptyState.style.display = "block";
+    return;
+  }
+  emptyState.style.display = "none";
+
+  const maxPmb = Math.max(...DATA.map(d=>Math.abs(d.pmb)), 1);
+
+  tbody.innerHTML = sorted.map(d=>{
+    const mbCls = d.mb>=0 ? "pos" : "neg";
+    const pmbColor = d.pmb>=0 ? "var(--pos)" : "var(--neg)";
+    const pmbWidth = Math.min(Math.abs(d.pmb)/maxPmb*100, 100);
+    return `<tr>
+      <td><span class="mini-plate"><span class="flag"></span><span class="txt">${d.placa}</span></span></td>
+      <td>${d.marca}</td>
+      <td>${d.modelo}</td>
+      <td class="num">${d.anio}</td>
+      <td><span class="badge ${ESTADO_CLASS[d.estado]}">${d.estado}</span></td>
+      <td class="num">${fmtMoney(d.ingreso)}</td>
+      <td class="num">${fmtMoney(d.costo)}</td>
+      <td class="num mbcell ${mbCls}">${fmtMoney(d.mb)}</td>
+      <td class="num">
+        <span class="pmb-bar">
+          <span class="pmb-track"><span class="fill" style="width:${pmbWidth}%;background:${pmbColor}"></span></span>
+          <span style="color:${pmbColor};font-weight:600;">${fmtPct(d.pmb)}</span>
+        </span>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function renderAll(){
+  const rows = getFiltered();
+  renderKPIs(rows);
+  renderPills();
+  renderChartMarca(rows);
+  renderDonut(rows);
+  renderTable(rows);
+}
+
+document.getElementById("searchInput").addEventListener("input", (e)=>{
+  state.search = e.target.value;
+  renderAll();
+});
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  state = { marca:null, estado:null, anio:null, search:"", sortKey:"mb", sortDir:-1 };
+  document.getElementById("searchInput").value = "";
+  renderAll();
+});
+document.querySelectorAll("thead th").forEach(th=>{
+  th.addEventListener("click", ()=>{
+    const key = th.dataset.key;
+    if(state.sortKey === key){ state.sortDir *= -1; }
+    else { state.sortKey = key; state.sortDir = key==="placa"||key==="marca"||key==="modelo"||key==="estado" ? 1 : -1; }
+    renderTable(getFiltered());
+  });
+});
+
+renderAll();
+</script>
+</body>
+</html>
