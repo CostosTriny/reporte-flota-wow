@@ -121,7 +121,74 @@
   .empty-state{padding:50px 20px;text-align:center;color:var(--muted2);font-size:13px;}
 
   footer{margin-top:26px;color:var(--muted2);font-size:11px;text-align:center;font-family:'JetBrains Mono',monospace;}
+
+  /* THEME TOGGLE */
+  .theme-toggle{position:fixed;top:16px;right:16px;z-index:1000;width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;box-shadow:0 4px 12px rgba(0,0,0,.25);}
+  .theme-toggle:hover{border-color:var(--accent);color:var(--accent);transform:scale(1.05);}
+  .theme-toggle svg{width:20px;height:20px;}
+  .theme-toggle .icon-moon{display:none;}
+  .theme-toggle .icon-sun{display:block;}
+
+  /* LIGHT THEME */
+  body.light-theme{
+    --bg:#F4F6F9;
+    --surface:#FFFFFF;
+    --surface2:#F0F2F7;
+    --border:#D8DDE8;
+    --border-soft:#E8ECF2;
+    --text:#1A1D26;
+    --muted:#5A6270;
+    --muted2:#8A93A3;
+    --accent:#C49A2C;
+    --accent-dim:#A07D22;
+    --pos:#2A9D6F;
+    --pos-dim:#D4F0E4;
+    --neg:#D6455A;
+    --neg-dim:#FADCE0;
+    --blue:#4A6FCF;
+  }
+  body.light-theme .theme-toggle .icon-sun{display:none;}
+  body.light-theme .theme-toggle .icon-moon{display:block;}
+  body.light-theme .mini-plate{background:#fff;}
+  body.light-theme .plate{background:#fff;}
+
+  /* RESPONSIVE */
+  @media(max-width:768px){
+    .wrap{padding:20px 14px 50px;}
+    header{flex-direction:column;align-items:flex-start;gap:12px;}
+    h1{font-size:22px;}
+    .subtitle{font-size:12px;}
+    .header-meta{text-align:left;}
+    .kpis{grid-template-columns:1fr 1fr;}
+    .kpi{padding:14px 12px;}
+    .kpi .value{font-size:18px;}
+    .filter-row{gap:14px;}
+    .searchbox{min-width:100%;}
+    .charts{grid-template-columns:1fr;}
+    .chart-card{padding:16px;}
+    .bar-row{grid-template-columns:80px 1fr 60px;gap:6px;font-size:11px;}
+    .bar-row .name{max-width:80px;}
+    .bar-track{height:12px;}
+    .donut-wrap{flex-direction:column;align-items:center;}
+    .table-header{padding:12px 14px;}
+    table{font-size:11.5px;}
+    thead th{padding:8px 10px;font-size:9.5px;}
+    tbody td{padding:7px 10px;}
+    .theme-toggle{width:38px;height:38px;top:12px;right:12px;}
+    .theme-toggle svg{width:18px;height:18px;}
+  }
+  @media(max-width:480px){
+    .kpis{grid-template-columns:1fr;}
+    .kpi .value{font-size:20px;}
+    .pills{gap:4px;}
+    .pill{padding:5px 10px;font-size:11px;}
+    .bar-row{grid-template-columns:70px 1fr 55px;}
+    .bar-row .name{max-width:70px;font-size:10.5px;}
+    .legend{font-size:11px;}
+    .legend .lname{min-width:70px;}
+  }
 </style>
+<base target="_blank">
 </head>
 <body>
 <div class="wrap">
@@ -134,6 +201,11 @@
     </div>
     <div class="plate"><div class="flag"></div><div class="txt">RESUMEN</div></div>
   </header>
+  <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Cambiar tema">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+
 
   <div class="kpis" id="kpiStrip"></div>
 
@@ -162,7 +234,7 @@
 
   <div class="charts">
     <div class="chart-card">
-      <div class="chart-title">Margen bruto (S/) y % margen por marca</div>
+      <div class="chart-title">Margen bruto ($) y % margen por marca</div>
       <div id="chartMarca"></div>
     </div>
     <div class="chart-card">
@@ -214,7 +286,7 @@ let state = { marca: null, estado: null, anio: null, search: "", sortKey: "mb", 
 
 function fmtMoney(n){
   const sign = n < 0 ? "-" : "";
-  return sign + "S/ " + Math.abs(n).toLocaleString("es-PE", {minimumFractionDigits:0, maximumFractionDigits:0});
+  return sign + "$ " + Math.abs(n).toLocaleString("es-PE", {minimumFractionDigits:0, maximumFractionDigits:0});
 }
 function fmtPct(n){ return (n>=0?"+":"") + n.toFixed(1) + "%"; }
 
@@ -420,6 +492,15 @@ document.querySelectorAll("thead th").forEach(th=>{
     else { state.sortKey = key; state.sortDir = key==="placa"||key==="marca"||key==="modelo"||key==="estado" ? 1 : -1; }
     renderTable(getFiltered());
   });
+});
+
+/* THEME TOGGLE */
+const themeToggle = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('kimi-theme');
+if(savedTheme === 'light'){ document.body.classList.add('light-theme'); }
+themeToggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('light-theme');
+  localStorage.setItem('kimi-theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
 });
 
 renderAll();
